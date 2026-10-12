@@ -34,5 +34,5 @@ echo "▸ Building $OUT"
   -D app=dist/Texora.app -D background="$WORK/background.tiff" -D volume_icon=Resources/AppIcon.icns \
   "Texora" "$OUT"
 
-shasum -a 256 "$OUT" | tee "$OUT.sha256"
+(cd dist && shasum -a 256 "Texora-$VERSION.dmg") | tee "$OUT.sha256"
 du -h "$OUT" | awk '{print "▸ Done: " $2 " (" $1 ")"}'

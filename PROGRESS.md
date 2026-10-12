@@ -80,6 +80,15 @@ scripts/tx.sh snapshot /path/shot.png
 - tx commands: open, openProject, openFile, select (ask=1), ask, askPDF, chat, model, compile, dump, snapshot, export, restore, diff, undoLast, theme, layout, tab
 - **Reset after testing:** `defaults delete app.texora.Texora projectsFolder; defaults write app.texora.Texora claudeModel ""` (testing used haiku and tectonic)
 
+## GitHub, CI, releases (2026-10-12)
+- Repo: https://github.com/mehul-raj5/texora (public). Commits are made as "Mehul Raj" <125985871+mehul-raj5@users.noreply.github.com> via repo-local git config.
+- Pushing: SSH isn't authorised, so push over HTTPS with the gh token:
+  `git -c credential.helper= -c 'credential.helper=!gh auth git-credential' push`
+- Release **v1.0.0** is published with Texora-1.0.0.dmg + .sha256. Download, checksum, signature and `xattr -cr` were verified.
+- `.github/workflows/ci.yml` and `release.yml` exist locally but are **not pushed yet**. The gh token lacks the `workflow` scope; the user must run `gh auth refresh -h github.com -s workflow`.
+- DMG: `scripts/make-dmg.sh` uses dmgbuild (venv `.venv-dmg`) and the background from `scripts/dmg/make-background.swift`.
+- Tests: 47 Swift tests (`swift test`) + 11 Node tests (`cd web && npm test`).
+
 ## Verified live in the built app (automation + snapshots)
 - ZIP import (with __MACOSX junk), main-file detection, outline with →, Tectonic compile 12.9 s first run / 1.3 s after
 - Chat edit → History → auto recompile; resume after restart; attachments → chatattachments/; Stop interrupts
