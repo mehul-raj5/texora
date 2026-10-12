@@ -1,0 +1,9 @@
+.build/
+.swiftpm/
+web/node_modules/
+dist/
+*.app
+*.dmg
+.DS_Store
+.venv*/
+*.xcresult

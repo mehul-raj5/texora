@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #1e1e2e; --sidebar: #181825; --surface: #262637; --elevated: #313244; --border: #2a2a3c;
+    --text: #cdd6f4; --text-secondary: #a6adc8; --text-muted: #7f849c; --accent: #cba6f7;
+    --selection: #313244; --success: #a6e3a1; --warning: #f9e2af; --danger: #f38ba8; --hover: #ffffff10;
+    --syn-command: #cba6f7; --syn-keyword: #89b4fa; --syn-env: #f9e2af; --syn-math: #a6e3a1;
+    --syn-comment: #6c7086; --syn-bracket: #9399b2; --syn-number: #fab387; --syn-string: #a6e3a1;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+    --ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+    --font-size: 14px;
+  }
+  html, body { margin: 0; padding: 0; height: 100%; background: var(--bg); overflow: hidden; }
+  body { font-family: var(--ui); -webkit-font-smoothing: antialiased; }
+  #editor { position: absolute; inset: 0; }
+  .tx-fold { display: inline-block; transform: rotate(90deg); font-size: 15px; line-height: 1; opacity: 0; transition: opacity .15s; }
+  .tx-fold.closed { transform: none; opacity: 1; }
+  .cm-gutters:hover .tx-fold { opacity: 1; }
+  .tx-pill {
+    position: fixed; z-index: 50; display: flex; align-items: center; gap: 6px;
+    padding: 5px 10px 5px 9px; border-radius: 999px; border: 1px solid var(--border);
+    background: var(--elevated); color: var(--text); font: 500 12.5px var(--ui);
+    box-shadow: 0 6px 20px rgba(0,0,0,.22); cursor: pointer; opacity: 0; pointer-events: none;
+    transform: translateY(4px); transition: opacity .14s ease, transform .14s ease;
+  }
+  .tx-pill.visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
+  .tx-pill:hover { border-color: var(--accent); }
+  .tx-spark { color: var(--accent); }
+  .tx-kbd { color: var(--text-muted); font-size: 11px; margin-left: 2px; }
+  @keyframes tx-flash {
+    0% { background-color: color-mix(in srgb, var(--accent) 28%, transparent); }
+    100% { background-color: transparent; }
+  }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--text-muted) 35%, transparent); border-radius: 6px; border: 2px solid var(--bg); }
+  ::-webkit-scrollbar-track { background: transparent; }
+</style>
+</head>
+<body>
+<div id="editor"></div>
+<script src="editor.js"></script>
+</body>
+</html>

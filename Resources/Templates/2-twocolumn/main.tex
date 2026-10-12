@@ -1,0 +1,64 @@
+\documentclass[10pt,twocolumn]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage[margin=0.75in]{geometry}
+\usepackage[numbers]{natbib}
+\usepackage{hyperref}
+
+\title{{{TITLE}}}
+\author{Your Name\\Your Institution\\\texttt{you@example.com}}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Summarise the problem, the approach and the main result in a few sentences.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:intro}
+Motivate the problem and list your contributions.
+
+\section{Related Work}
+\label{sec:related}
+Prior work includes the classic text by Knuth~\cite{knuth1984}.
+
+\section{Method}
+\label{sec:method}
+Describe the method. Equation~\eqref{eq:loss} defines the objective:
+\begin{equation}
+  \mathcal{L} = \sum_{i=1}^{N} \lVert y_i - f(x_i) \rVert^2 .
+  \label{eq:loss}
+\end{equation}
+
+\section{Experiments}
+\label{sec:experiments}
+Report results in Table~\ref{tab:results}.
+
+\begin{table}[t]
+  \centering
+  \caption{Main results.}
+  \label{tab:results}
+  \begin{tabular}{lcc}
+    \toprule
+    Method & Score $\uparrow$ & Time (s) $\downarrow$ \\
+    \midrule
+    Baseline & 71.2 & 3.4 \\
+    Ours & \textbf{78.9} & 2.1 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Conclusion}
+\label{sec:conclusion}
+Summarise the findings.
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\end{document}

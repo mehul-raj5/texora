@@ -1,0 +1,5 @@
+method,rmse,crps,bias
+Raw forecast,2.41,1.32,0.42
+EMOS,2.05,1.11,0.18
+U-Net,1.84,0.97,0.09
+Ours,1.62,0.88,0.03
