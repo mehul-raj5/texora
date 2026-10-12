@@ -61,7 +61,7 @@ private struct EditorSettings: View {
             }
             Section("Keys") {
                 Toggle("Vim key bindings", isOn: $settings.vimMode)
-                Text("⌘B recompile · ⌘K ask Claude about the selection · ⌘L send the selection to chat · ⌘/ comment · ⌘I italic · ⇧⌘B bold · ⌘-click jump to PDF")
+                Text("⌘S save and recompile · ⌘B sidebar · ⌘L chat · ⌘K ask Claude about the selection · ⇧⌘L send the selection to chat · ⌘/ comment · ⌘I italic · ⇧⌘B bold · ⌘-click jump to PDF")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }

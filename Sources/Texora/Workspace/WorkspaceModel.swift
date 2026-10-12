@@ -556,8 +556,9 @@ final class WorkspaceModel {
             updateActiveOutline()
         case "command":
             switch msg["name"] as? String {
-            case "save": saveAll()
-            case "compile": compile(reason: .manual)
+            case "save", "compile": compile(reason: .manual)
+            case "toggleSidebar": app.sidebarVisible.toggle()
+            case "toggleChat": chatVisible.toggle()
             default: break
             }
         case "askClaude":
@@ -727,7 +728,7 @@ final class WorkspaceModel {
 
     func exportPDF() {
         guard let pdfURL = compiler.pdfURL, FileManager.default.fileExists(atPath: pdfURL.path) else {
-            app.showError("There's no PDF yet. Recompile first (⌘B).")
+            app.showError("There's no PDF yet. Press ⌘S to compile first.")
             return
         }
         let panel = NSSavePanel()

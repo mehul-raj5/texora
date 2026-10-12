@@ -92,7 +92,7 @@ private struct ChatHeader: View {
             .fixedSize()
             .help("Claude model")
             IconButton(systemName: "square.and.pencil", help: "New chat", size: 13) { ws.chat.newChat() }
-            IconButton(systemName: "sidebar.right", help: "Hide chat (⌥⌘C)", size: 13) { ws.chatVisible = false }
+            IconButton(systemName: "sidebar.right", help: "Hide chat (⌘L)", size: 13) { ws.chatVisible = false }
         }
         .padding(.leading, 14)
         .padding(.trailing, 8)
@@ -234,7 +234,7 @@ private struct ChatInput: View {
                                 .foregroundStyle(theme.secondaryColor)
                         }
                         .buttonStyle(.plain)
-                        .help("Include the text selected in the editor (⌘L)")
+                        .help("Include the text selected in the editor (⇧⌘L)")
                     }
                     Spacer()
                     if ws.chat.isRunning {

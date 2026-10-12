@@ -139,7 +139,7 @@ struct WorkspaceToolbar: View {
             .frame(height: 28)
             .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(theme.surfaceColor))
             .help("Export the project (⇧⌘E)")
-            IconButton(systemName: "sparkles", help: "Chat with Claude (⌥⌘C)", active: ws.chatVisible) { ws.chatVisible.toggle() }
+            IconButton(systemName: "sparkles", help: "Chat with Claude (⌘L)", active: ws.chatVisible) { ws.chatVisible.toggle() }
         }
     }
 }
@@ -176,6 +176,6 @@ private struct RecompileButton: View {
             .onHover { hovering = $0 }
         }
         .buttonStyle(.plain)
-        .help("Recompile (⌘B)")
+        .help("Save and recompile (⌘S)")
     }
 }

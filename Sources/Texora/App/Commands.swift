@@ -17,7 +17,7 @@ struct TexoraCommands: Commands {
                 .disabled(model.workspace == nil)
         }
         CommandGroup(replacing: .saveItem) {
-            Button("Save") { model.workspace?.saveAll() }
+            Button("Save and Recompile") { model.workspace?.compile(reason: .manual) }
                 .keyboardShortcut("s")
                 .disabled(model.workspace == nil)
         }
@@ -32,13 +32,13 @@ struct TexoraCommands: Commands {
         }
         CommandMenu("Project") {
             Button("Recompile") { model.workspace?.compile(reason: .manual) }
-                .keyboardShortcut("b")
+                .keyboardShortcut(.return, modifiers: .command)
                 .disabled(model.workspace == nil)
             Button("Ask Claude About Selection") { model.workspace?.askClaudeAboutSelection() }
                 .keyboardShortcut("k")
                 .disabled(model.workspace == nil)
             Button("Send Selection to Chat") { model.workspace?.sendSelectionToChat() }
-                .keyboardShortcut("l")
+                .keyboardShortcut("l", modifiers: [.command, .shift])
                 .disabled(model.workspace == nil)
             Divider()
             Button("Files") { model.workspace?.sidebarTab = .files }
@@ -64,9 +64,9 @@ struct TexoraCommands: Commands {
         }
         CommandGroup(after: .sidebar) {
             Button("Toggle Sidebar") { model.sidebarVisible.toggle() }
-                .keyboardShortcut("s", modifiers: [.command, .control])
+                .keyboardShortcut("b")
             Button("Toggle Chat") { model.workspace?.chatVisible.toggle() }
-                .keyboardShortcut("c", modifiers: [.command, .option])
+                .keyboardShortcut("l")
                 .disabled(model.workspace == nil)
             Button("Switch Light/Dark Theme") { model.themes.toggleLightDark() }
                 .keyboardShortcut("t", modifiers: [.command, .control])

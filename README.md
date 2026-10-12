@@ -56,13 +56,13 @@ cd web && npm install && npm run build
 | Action | How |
 |---|---|
 | New project / import ZIP / open folder | Home screen, or ⌘N / ⇧⌘I / ⌘O |
-| Recompile | ⌘B (auto-compiles after saving by default) |
+| Save and recompile | ⌘S (also auto-compiles a moment after you stop typing) |
 | Ask Claude about a selection | Select text in the code or PDF, then click **✦ Ask Claude** or press ⌘K |
-| Send the selection to chat | ⌘L |
+| Send the selection to chat | ⇧⌘L |
 | Jump between code and PDF | ⌘-click in either one (SyncTeX) |
 | Files / Outline / History | ⌘1 / ⌘2 / ⌘3 |
 | Code / Split / PDF layout | ⌥⌘1 / ⌥⌘2 / ⌥⌘3 |
-| Toggle chat / sidebar | ⌥⌘C / ⌃⌘S |
+| Toggle sidebar / chat | ⌘B / ⌘L |
 | Export project ZIP | ⇧⌘E |
 | Switch light/dark theme | ⌃⌘T, or the sun/moon button for the full list |
 

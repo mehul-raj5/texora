@@ -143,10 +143,11 @@ function extensions() {
     spellC.of(EditorView.contentAttributes.of({ spellcheck: options.spell ? "true" : "false", autocorrect: "off", autocapitalize: "off" })),
     keymap.of([
       { key: "Mod-s", run: () => { requestSave(); return true; } },
-      { key: "Mod-b", run: () => { flushChanges(); post({ type: "command", name: "compile" }); return true; } },
+      { key: "Mod-b", run: () => { post({ type: "command", name: "toggleSidebar" }); return true; } },
       { key: "Mod-Enter", run: () => { flushChanges(); post({ type: "command", name: "compile" }); return true; } },
       { key: "Mod-k", run: () => { askClaude(); return true; } },
-      { key: "Mod-l", run: () => { sendSelectionToChat(); return true; } },
+      { key: "Mod-l", run: () => { post({ type: "command", name: "toggleChat" }); return true; } },
+      { key: "Shift-Mod-l", run: () => { sendSelectionToChat(); return true; } },
       { key: "Mod-/", run: toggleComment },
       { key: "Mod-i", run: v => wrapSelection(v, "\\textit{", "}") },
       { key: "Mod-Shift-b", run: v => wrapSelection(v, "\\textbf{", "}") },

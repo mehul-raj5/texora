@@ -8,7 +8,7 @@ struct TopBar: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            IconButton(systemName: "sidebar.left", help: "Toggle sidebar (⌃⌘S)") {
+            IconButton(systemName: "sidebar.left", help: "Toggle sidebar (⌘B)") {
                 model.sidebarVisible.toggle()
             }
             breadcrumb
