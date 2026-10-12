@@ -1,0 +1,75 @@
+name: Release
+
+# Push a tag like v1.2.0 (or run manually) to build Texora-<version>.dmg and publish it on GitHub Releases.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release, e.g. 1.2.0 (a v-tag is created)"
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  dmg:
+    name: Build and publish the DMG
+    runs-on: macos-26
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Work out the version
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then V="${{ inputs.version }}"; else V="${GITHUB_REF_NAME#v}"; fi
+          V="${V#v}"
+          [[ "$V" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.]+)?$ ]] || { echo "Bad version: $V"; exit 1; }
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "tag=v$V" >> "$GITHUB_OUTPUT"
+
+      - name: Toolchain
+        run: |
+          sw_vers
+          xcodebuild -version
+
+      - name: Install Tectonic (integration tests)
+        run: brew install tectonic
+
+      - name: Tests
+        run: swift test
+
+      - name: Build Texora.app and the DMG
+        env:
+          TEXORA_VERSION: ${{ steps.version.outputs.version }}
+        run: ./scripts/make-dmg.sh
+
+      - name: Verify the DMG
+        run: |
+          V="${{ steps.version.outputs.version }}"
+          hdiutil verify "dist/Texora-$V.dmg"
+          MNT="$(mktemp -d)"
+          hdiutil attach -nobrowse -readonly -mountpoint "$MNT" "dist/Texora-$V.dmg"
+          codesign --verify --deep --strict "$MNT/Texora.app"
+          test "$(plutil -extract CFBundleShortVersionString raw "$MNT/Texora.app/Contents/Info.plist")" = "$V"
+          hdiutil detach "$MNT"
+
+      - name: Publish the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V="${{ steps.version.outputs.version }}"
+          TAG="${{ steps.version.outputs.tag }}"
+          sed "s/{{VERSION}}/$V/g" scripts/release-notes.md > "$RUNNER_TEMP/notes.md"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "dist/Texora-$V.dmg" "dist/Texora-$V.dmg.sha256" --clobber
+          else
+            gh release create "$TAG" "dist/Texora-$V.dmg" "dist/Texora-$V.dmg.sha256" \
+              --title "Texora $V" --notes-file "$RUNNER_TEMP/notes.md" --target "$GITHUB_SHA"
+          fi
