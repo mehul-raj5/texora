@@ -64,6 +64,8 @@ enum LogParser {
                     j += 1
                 }
                 if msg.hasPrefix("LaTeX Error: ") { msg.removeFirst("LaTeX Error: ".count) }
+                let trimmedMsg = msg.trimmingCharacters(in: .whitespaces)
+                if trimmedMsg == "Emergency stop." || trimmedMsg.hasPrefix("==> Fatal error") { i += 1; continue }
                 if msg.hasPrefix("Package ") || msg.hasPrefix("Class ") {
                     // "Package xyz Error: text" plus continuation lines in parentheses
                     for d in detail where d.hasPrefix("(") && !d.hasPrefix("(./") { msg += " " + d.drop(while: { $0 != ")" }).dropFirst().trimmingCharacters(in: .whitespaces) }

@@ -68,7 +68,9 @@ final class CompileController {
         engineLabel = command.label
         if command.isTectonic && installRound == 0 { detail = "Compiling with Tectonic (first runs download packages)…" }
 
-        let result = await runProcess(command.executable, command.args, cwd: job.root, env: job.tools.environment, timeout: 240)
+        // After installing a package, force latexmk to rebuild even though no source file changed.
+        let args = (!command.isTectonic && installRound > 0) ? ["-g"] + command.args : command.args
+        let result = await runProcess(command.executable, args, cwd: job.root, env: job.tools.environment, timeout: 240)
         lastDuration = Date().timeIntervalSince(start)
 
         let base = (job.mainFile as NSString).deletingPathExtension

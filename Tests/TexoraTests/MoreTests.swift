@@ -225,6 +225,12 @@ final class MoreLogParserTests: XCTestCase {
         XCTAssertEqual(warnings, ["There were undefined references."])
     }
 
+    func testFatalErrorFollowUpsAreNotReported() {
+        let log = "(./main.tex\n./main.tex:11: LaTeX Error: File `cite.sty' not found.\n./main.tex:11: Emergency stop.\n./main.tex:11:  ==> Fatal error occurred, no output PDF file produced!\n)"
+        let issues = LogParser.parse(log, root: root, projectFiles: ["main.tex"])
+        XCTAssertEqual(issues.map(\.message), ["File `cite.sty' not found."])
+    }
+
     func testDeduplicatesRepeatedWarnings() {
         let w = "LaTeX Warning: Citation `x' on page 1 undefined on input line 4.\n"
         let issues = LogParser.parse("(./main.tex\n" + w + "\n" + w + ")", root: root, projectFiles: ["main.tex"])
