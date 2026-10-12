@@ -19,7 +19,7 @@ for arg in "$@"; do
   esac
 done
 
-VERSION="$(cat VERSION 2>/dev/null || echo 1.0.0)"
+VERSION="${TEXORA_VERSION:-$(cat VERSION 2>/dev/null || echo 1.0.0)}"
 BUILD_NUM="$(date +%Y%m%d%H%M)"
 
 echo "▸ Building ($CONFIG, arm64)…"
@@ -92,7 +92,10 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 PLIST
 
 echo "▸ Signing (ad-hoc)"
+# Extended attributes (Finder info, provenance) break strict signature checks.
+xattr -cr "$APP"
 codesign --force --deep --sign - "$APP" >/dev/null
+codesign --verify --deep --strict "$APP"
 
 if [[ $INSTALL == 1 ]]; then
   echo "▸ Installing to /Applications"

@@ -1,6 +1,19 @@
 # Texora
 
+[![CI](https://github.com/mehul-raj5/texora/actions/workflows/ci.yml/badge.svg)](https://github.com/mehul-raj5/texora/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/mehul-raj5/texora)](https://github.com/mehul-raj5/texora/releases/latest)
+
 A native LaTeX editor for Apple Silicon Macs, with Claude built in.
+
+## Install
+1. Download the latest **Texora-x.y.z.dmg** from [Releases](https://github.com/mehul-raj5/texora/releases/latest).
+2. Open it and drag **Texora** into **Applications**.
+3. Run this once in Terminal:
+   ```bash
+   xattr -cr /Applications/Texora.app
+   ```
+   macOS blocks apps that aren't signed by Apple, and Texora isn't yet. Without this step macOS says the app "is damaged". Alternatively, try to open it, then click **Open Anyway** in System Settings → Privacy & Security.
+4. Open Texora. You also need [Claude Code](https://claude.com/claude-code) signed in, and a TeX engine (see Requirements).
 
 - **Projects:** import a project ZIP (e.g. from Overleaf), open a folder, or start from a template (article, two-column, IEEE, ACM, thesis, Beamer, letter).
 - **Editing:** a fast CodeMirror 6 editor next to a live PDF preview (Apple PDFKit), with a file outline, change history and 20 themes.
@@ -16,13 +29,23 @@ A native LaTeX editor for Apple Silicon Macs, with Claude built in.
   - Tectonic (`brew install tectonic`). Used automatically when TinyTeX/MacTeX isn't installed.
   - MacTeX, detected automatically if present.
 
-## Build and run
+## Build from source
 ```bash
 ./scripts/build-app.sh            # builds dist/Texora.app (arm64, ad-hoc signed)
 ./scripts/build-app.sh --install  # …and copies it to /Applications
-./scripts/build-app.sh --dmg      # …and makes dist/Texora.dmg
-swift test                        # unit + integration tests
+./scripts/make-dmg.sh             # builds dist/Texora-<version>.dmg with the drag-to-Applications window
+swift test                        # Swift unit + integration tests
+(cd web && npm ci && npm test)    # editor (CodeMirror) tests
 ```
+
+## CI and releases
+- **CI** (`.github/workflows/ci.yml`) runs on every push and pull request:
+  - editor tests on Linux, and a check that the committed editor bundle matches its source
+  - `swift test` and an app-bundle build on an Apple Silicon `macos-26` runner
+- **Release** (`.github/workflows/release.yml`):
+  1. Bump `VERSION`, commit, then `git tag v1.2.0 && git push --tags`.
+  2. The workflow tests, builds `Texora-1.2.0.dmg`, verifies the signature inside it, and publishes a GitHub Release with the DMG, its SHA-256 and install notes.
+- Builds are ad-hoc signed, which is why users run `xattr -cr`. With an Apple Developer ID you could add `codesign --options runtime` plus `notarytool` to the release job and drop that step.
 
 The editor bundle (`Resources/editor/editor.js`) is checked in. Rebuild it after changing `web/src` with:
 ```bash
