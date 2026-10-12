@@ -45,10 +45,10 @@ struct WorkspaceView: View {
                 switch ws.layout {
                 case .code: return w
                 case .pdf: return 0
-                case .split: return max(260, min(w - 260, w * ws.splitFraction))
+                case .split: return max(260, min(w - 260 - DragHandle.width, w * ws.splitFraction))
                 }
             }()
-            let pdfW = ws.layout == .split ? max(0, w - editorW - 1) : (ws.layout == .pdf ? w : 0)
+            let pdfW = ws.layout == .split ? max(0, w - editorW - DragHandle.width) : (ws.layout == .pdf ? w : 0)
             HStack(spacing: 0) {
                 EditorPane()
                     .frame(width: editorW)
@@ -68,56 +68,68 @@ struct WorkspaceView: View {
     }
 }
 
-/// Draggable divider between the editor and the PDF.
-struct SplitHandle: View {
+/// A real (not overlaid) drag handle, so web/PDF views beside it can't swallow the clicks.
+/// Drags are measured in global coordinates, which stay stable while the handle itself moves.
+struct DragHandle: View {
     @Environment(\.theme) private var theme
-    @Binding var fraction: CGFloat
-    let totalWidth: CGFloat
-    @State private var start: CGFloat?
+    var onBegan: () -> Void
+    var onChanged: (CGFloat) -> Void
+    var onEnded: () -> Void = {}
+    @State private var hovering = false
+    @State private var dragging = false
+    static let width: CGFloat = 10
 
     var body: some View {
-        ThemedDivider(vertical: true)
-            .overlay(
-                Color.clear
-                    .frame(width: 9)
-                    .contentShape(Rectangle())
-                    .onHover { inside in if inside { NSCursor.resizeLeftRight.push() } else { NSCursor.pop() } }
-                    .gesture(
-                        DragGesture(minimumDistance: 1)
-                            .onChanged { v in
-                                if start == nil { start = fraction }
-                                fraction = min(0.8, max(0.2, (start ?? 0.5) + v.translation.width / max(totalWidth, 1)))
-                            }
-                            .onEnded { _ in start = nil }
-                    )
-            )
+        ZStack {
+            Rectangle().fill(theme.bgColor)
+            Rectangle().fill(theme.borderColor).frame(width: 1)
+            Capsule()
+                .fill(dragging ? theme.accentColor : theme.mutedColor.opacity(0.8))
+                .frame(width: 4, height: 36)
+                .opacity(hovering || dragging ? 1 : 0)
+        }
+        .frame(width: Self.width)
+        .contentShape(Rectangle())
+        .pointerStyle(.columnResize)
+        .onHover { hovering = $0 }
+        .animation(.easeOut(duration: 0.12), value: hovering)
+        .gesture(
+            DragGesture(minimumDistance: 0, coordinateSpace: .global)
+                .onChanged { v in
+                    if !dragging { dragging = true; onBegan() }
+                    onChanged(v.translation.width)
+                }
+                .onEnded { _ in dragging = false; onEnded() }
+        )
     }
 }
 
-/// Draggable divider that resizes a side panel (e.g. the chat).
+/// Divider between the editor and the PDF.
+struct SplitHandle: View {
+    @Binding var fraction: CGFloat
+    let totalWidth: CGFloat
+    @State private var start: CGFloat = 0.5
+
+    var body: some View {
+        DragHandle(onBegan: { start = fraction }, onChanged: { dx in
+            fraction = min(0.8, max(0.2, start + dx / max(totalWidth, 1)))
+        })
+        .onTapGesture(count: 2) { withAnimation(.easeOut(duration: 0.2)) { fraction = 0.5 } }
+        .help("Drag to resize · double-click to reset")
+    }
+}
+
+/// Divider that resizes a side panel (e.g. the chat).
 struct ResizeHandle: View {
     @Binding var value: CGFloat
     let range: ClosedRange<CGFloat>
     var invert = false
-    @State private var start: CGFloat?
+    @State private var start: CGFloat = 0
 
     var body: some View {
-        ThemedDivider(vertical: true)
-            .overlay(
-                Color.clear
-                    .frame(width: 9)
-                    .contentShape(Rectangle())
-                    .onHover { inside in if inside { NSCursor.resizeLeftRight.push() } else { NSCursor.pop() } }
-                    .gesture(
-                        DragGesture(minimumDistance: 1)
-                            .onChanged { v in
-                                if start == nil { start = value }
-                                let delta = invert ? -v.translation.width : v.translation.width
-                                value = min(range.upperBound, max(range.lowerBound, (start ?? value) + delta))
-                            }
-                            .onEnded { _ in start = nil }
-                    )
-            )
+        DragHandle(onBegan: { start = value }, onChanged: { dx in
+            value = min(range.upperBound, max(range.lowerBound, start + (invert ? -dx : dx)))
+        })
     }
 }
 
