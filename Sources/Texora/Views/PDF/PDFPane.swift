@@ -38,6 +38,8 @@ final class PDFController {
 
     func attach(_ v: TexoraPDFView) {
         view = v
+        loadedVersion = -1   // a new view starts empty, so the next load must fill it
+        loadedURL = nil
         v.onCommandClick = { [weak self] page, point in
             guard let self, let doc = page.document else { return }
             let idx = doc.index(for: page)

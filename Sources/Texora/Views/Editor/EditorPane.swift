@@ -12,7 +12,8 @@ struct CodeMirrorView: NSViewRepresentable {
     }
 
     func updateNSView(_ container: NSView, context: Context) {
-        if bridge.webView.superview !== container { attach(to: container) }
+        // Only adopt the web view if it isn't living in another (newer) container already.
+        if bridge.webView.superview == nil || bridge.webView.window == nil { attach(to: container) }
     }
 
     private func attach(to container: NSView) {

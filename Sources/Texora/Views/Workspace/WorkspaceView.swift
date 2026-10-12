@@ -18,7 +18,6 @@ struct WorkspaceView: View {
             }
         }
         .animation(.easeOut(duration: 0.18), value: ws.chatVisible)
-        .animation(.easeOut(duration: 0.18), value: ws.layout)
         .sheet(isPresented: $ws.showExport) {
             ExportSheet().environment(ws).environment(\.theme, theme)
         }
@@ -36,22 +35,34 @@ struct WorkspaceView: View {
         ws.editor.setOptions(["fontSize": settings.editorFontSize, "wrap": settings.lineWrap, "vim": settings.vimMode])
     }
 
-    @ViewBuilder
+    /// Both panes stay alive in every layout; only their widths change. Recreating them on each
+    /// switch left the PDF view empty and could detach the editor's web view (black panes).
     private var center: some View {
         @Bindable var ws = ws
-        switch ws.layout {
-        case .code:
-            EditorPane()
-        case .pdf:
-            PDFPane()
-        case .split:
-            GeometryReader { geo in
-                HStack(spacing: 0) {
-                    EditorPane()
-                        .frame(width: max(260, min(geo.size.width - 260, geo.size.width * ws.splitFraction)))
-                    SplitHandle(fraction: $ws.splitFraction, totalWidth: geo.size.width)
-                    PDFPane()
+        return GeometryReader { geo in
+            let w = geo.size.width
+            let editorW: CGFloat = {
+                switch ws.layout {
+                case .code: return w
+                case .pdf: return 0
+                case .split: return max(260, min(w - 260, w * ws.splitFraction))
                 }
+            }()
+            let pdfW = ws.layout == .split ? max(0, w - editorW - 1) : (ws.layout == .pdf ? w : 0)
+            HStack(spacing: 0) {
+                EditorPane()
+                    .frame(width: editorW)
+                    .opacity(editorW > 0 ? 1 : 0)
+                    .allowsHitTesting(editorW > 0)
+                    .clipped()
+                if ws.layout == .split {
+                    SplitHandle(fraction: $ws.splitFraction, totalWidth: w)
+                }
+                PDFPane()
+                    .frame(width: pdfW)
+                    .opacity(pdfW > 0 ? 1 : 0)
+                    .allowsHitTesting(pdfW > 0)
+                    .clipped()
             }
         }
     }
