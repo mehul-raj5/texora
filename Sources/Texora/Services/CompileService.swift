@@ -25,6 +25,9 @@ final class CompileController {
     @ObservationIgnored private var queued = false
     @ObservationIgnored private var currentProcess: Process?
     @ObservationIgnored private var installedThisSession = Set<String>()
+    /// Modification date of the PDF currently shown. Any newer PDF on disk gets loaded,
+    /// including one Claude built itself (then latexmk has nothing left to do).
+    @ObservationIgnored private var shownPDFDate: Date?
 
     struct Job {
         let root: URL
@@ -111,29 +114,31 @@ final class CompileController {
         }
         issues = parsed
 
-        let attrs = try? FileManager.default.attributesOfItem(atPath: pdf.path)
-        let modified = attrs?[.modificationDate] as? Date
-        if let modified, modified >= start.addingTimeInterval(-2) {
-            pdfURL = pdf
-            pdfVersion += 1
-            synctex = await Task.detached { SyncTeX.load(pdf: pdf, root: job.root) }.value
-        } else if FileManager.default.fileExists(atPath: pdf.path), pdfURL == nil {
-            pdfURL = pdf
-            pdfVersion += 1
-            synctex = await Task.detached { SyncTeX.load(pdf: pdf, root: job.root) }.value
-        }
+        await showPDFIfChanged(pdf, root: job.root)
         status = errors.isEmpty ? .succeeded : .failed
         detail = nil
     }
 
     /// Loads an existing PDF from a previous session, if there is one.
     func loadExisting(root: URL, mainFile: String) {
+        Task { await showPDFIfChanged(Self.pdfURL(root: root, mainFile: mainFile), root: root) }
+    }
+
+    static func pdfURL(root: URL, mainFile: String) -> URL {
         let jobName = ((mainFile as NSString).deletingPathExtension as NSString).lastPathComponent
-        let pdf = root.appendingPathComponent(".build/\(jobName).pdf")
-        guard FileManager.default.fileExists(atPath: pdf.path) else { return }
+        return root.appendingPathComponent(".build/\(jobName).pdf")
+    }
+
+    /// Shows the PDF on disk if it's newer than the one on screen. Returns true if it reloaded.
+    @discardableResult
+    func showPDFIfChanged(_ pdf: URL, root: URL) async -> Bool {
+        guard let date = (try? FileManager.default.attributesOfItem(atPath: pdf.path))?[.modificationDate] as? Date else { return false }
+        if pdfURL == pdf, let shown = shownPDFDate, shown == date { return false }
+        shownPDFDate = date
         pdfURL = pdf
         pdfVersion += 1
-        Task { synctex = await Task.detached { SyncTeX.load(pdf: pdf, root: root) }.value }
+        synctex = await Task.detached { SyncTeX.load(pdf: pdf, root: root) }.value
+        return true
     }
 
     // MARK: Engines

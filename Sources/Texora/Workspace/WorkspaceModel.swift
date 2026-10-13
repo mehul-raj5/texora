@@ -177,7 +177,9 @@ final class WorkspaceModel {
     func relativePath(_ absolute: String) -> String {
         let std = URL(fileURLWithPath: absolute).standardizedFileURL.path
         let rootPath = root.path
-        for prefix in [rootPath, "/private" + rootPath] where std.hasPrefix(prefix + "/") {
+        // FSEvents reports real paths, which can differ from the opened path (symlinks, /private, iCloud).
+        let realRoot = root.resolvingSymlinksInPath().path
+        for prefix in [rootPath, "/private" + rootPath, realRoot] where std.hasPrefix(prefix + "/") {
             return String(std.dropFirst(prefix.count + 1))
         }
         return absolute
@@ -401,15 +403,20 @@ final class WorkspaceModel {
         refreshIndex()
     }
 
-    private func reloadFromDisk(_ path: String, flash: Bool) {
-        if let t = recentlySaved[path], Date().timeIntervalSince(t) < 1.0 { return }
+    /// `force` (used after Claude edits) skips the self-save guard and always pushes the disk
+    /// version into the editor, even if our bookkeeping thinks it's already current.
+    private func reloadFromDisk(_ path: String, flash: Bool, force: Bool = false) {
+        if !force, let t = recentlySaved[path], Date().timeIntervalSince(t) < 1.0 { return }
         guard var d = docs[path] else { return }
         guard let disk = readFile(path) else {
             if !fileExists(path) { closeTab(path, save: false) }
             return
         }
-        guard disk != d.saved else { return }
-        if d.isDirty && disk != d.text {
+        if disk == d.saved {
+            if force && d.text == d.saved { editor.setText(path: path, text: disk, flash: false) }
+            return
+        }
+        if d.isDirty && disk != d.text && !force {
             d.conflictDisk = disk
             docs[path] = d
         } else {
@@ -422,13 +429,18 @@ final class WorkspaceModel {
     /// Called after Claude finished a turn (or a turn was undone).
     func claudeChangedFiles(_ paths: [String]) async {
         rebuildTree()
-        for p in paths where docs[p] != nil { reloadFromDisk(p, flash: true) }
+        // Claude may edit with scripts as well as its edit tool; sync every open file with disk.
+        for p in docs.keys { reloadFromDisk(p, flash: paths.contains(p), force: true) }
         refreshIndex(immediately: true)
         let relevant = paths.contains { p in
             let k = FileKind(path: p, isDirectory: false)
             return [.tex, .bib, .style, .image, .pdf, .data, .other].contains(k)
         }
         if relevant { compile(reason: .claude) }
+        else if let main = record.mainFile {
+            // Claude may have compiled without changing sources: show its newer PDF.
+            await compiler.showPDFIfChanged(CompileController.pdfURL(root: root, mainFile: main), root: root)
+        }
         await history.reload()
     }
 

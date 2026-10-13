@@ -94,6 +94,12 @@ extension WorkspaceModel {
             forwardSync(path: arg, line: Int(arg2) ?? 1)
         case "attach":
             chat.pendingAttachments.append(URL(fileURLWithPath: arg))
+        case "dumpEditor":
+            let out = URL(fileURLWithPath: arg2)
+            Task {
+                let js = await editor.evaluate("window.texora.getText(\(String(data: try! JSONSerialization.data(withJSONObject: [arg]), encoding: .utf8)!)[0])") as? String
+                try? (js ?? "<nil>").write(to: out, atomically: true, encoding: .utf8)
+            }
         case "dump":
             dumpState(to: URL(fileURLWithPath: arg))
         default:

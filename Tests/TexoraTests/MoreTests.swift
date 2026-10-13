@@ -478,3 +478,24 @@ final class ToolLocatorTests: XCTestCase {
         XCTAssertTrue(tools.searchPath.contains(ToolLocator.tinyTeXBin))
     }
 }
+
+@MainActor
+final class PDFRefreshTests: XCTestCase {
+    /// A PDF rebuilt outside our own compile (e.g. by Claude) must still be picked up.
+    func testShowsNewerPDFFromDisk() async throws {
+        let root = makeTempDir("pdfr")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let pdf = root.appendingPathComponent(".build/main.pdf")
+        try FileManager.default.createDirectory(at: pdf.deletingLastPathComponent(), withIntermediateDirectories: true)
+        makeTinyPDF(at: pdf)
+        let c = CompileController()
+        let first = await c.showPDFIfChanged(pdf, root: root)
+        let again = await c.showPDFIfChanged(pdf, root: root)
+        XCTAssertTrue(first)
+        XCTAssertFalse(again, "same file, same date: no reload")
+        try FileManager.default.setAttributes([.modificationDate: Date().addingTimeInterval(5)], ofItemAtPath: pdf.path)
+        let changed = await c.showPDFIfChanged(pdf, root: root)
+        XCTAssertTrue(changed)
+        XCTAssertEqual(c.pdfVersion, 2)
+    }
+}

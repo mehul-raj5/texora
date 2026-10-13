@@ -353,9 +353,7 @@ final class ChatController {
             m.changedFiles = changed
         }
         persist()
-        if !changed.isEmpty {
-            await ws.claudeChangedFiles(changed.map(\.path))
-        }
+        await ws.claudeChangedFiles(changed.map(\.path))
     }
 
     // MARK: Undo
