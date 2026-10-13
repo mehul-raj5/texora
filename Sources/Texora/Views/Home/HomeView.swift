@@ -9,27 +9,33 @@ struct HomeView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                Text(greeting)
-                    .font(.system(size: 34, weight: .bold))
-                    .foregroundStyle(theme.textColor)
-                    .padding(.bottom, 28)
+            VStack(spacing: 0) {
+                HStack(alignment: .center, spacing: 14) {
+                    Image(systemName: "sparkle")
+                        .font(.system(size: 30, weight: .semibold))
+                        .foregroundStyle(theme.accentColor)
+                    Text(greeting)
+                        .font(.serif(40))
+                        .foregroundStyle(theme.textColor)
+                }
+                .padding(.bottom, 32)
 
-                inputBox
-                    .padding(.bottom, 16)
+                composer
+                    .padding(.bottom, 18)
 
-                HStack(spacing: 10) {
+                HStack(spacing: 8) {
                     PillButton(title: "New project", systemImage: "plus") { model.showNewProject = true }
                     PillButton(title: "Import ZIP", systemImage: "square.and.arrow.down") { model.chooseZipToImport() }
                     PillButton(title: "Open folder", systemImage: "folder") { model.chooseFolderToOpen() }
                 }
-                .padding(.bottom, 44)
+                .padding(.bottom, 52)
 
                 recent
             }
-            .frame(maxWidth: 820, alignment: .leading)
-            .padding(.horizontal, 48)
-            .padding(.top, 72)
+            .frame(maxWidth: 760)
+            .padding(.horizontal, 40)
+            .padding(.top, 110)
+            .padding(.bottom, 40)
             .frame(maxWidth: .infinity)
         }
         .scrollIndicators(.never)
@@ -45,38 +51,65 @@ struct HomeView: View {
         }
     }
 
-    private var inputBox: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "sparkles")
-                .font(.system(size: 15))
-                .foregroundStyle(theme.accentColor)
-            TextField("", text: $prompt, prompt: Text("Describe a new paper, or drop a .zip here").foregroundStyle(theme.mutedColor))
+    /// A tall, rounded composer card: text on top, tools on the left, send on the right.
+    private var composer: some View {
+        let empty = prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        return VStack(alignment: .leading, spacing: 10) {
+            TextField("", text: $prompt,
+                      prompt: Text("Describe a new paper, or drop a .zip here").foregroundStyle(theme.mutedColor),
+                      axis: .vertical)
                 .textFieldStyle(.plain)
-                .font(.system(size: 15))
+                .font(.system(size: 16))
                 .foregroundStyle(theme.textColor)
+                .lineLimit(2...8)
                 .focused($inputFocused)
-                .onSubmit(submit)
-            Button(action: submit) {
-                HStack(spacing: 6) {
-                    Text("Create")
-                    Image(systemName: "return")
+                .onKeyPress(.return, phases: .down) { press in
+                    if press.modifiers.contains(.shift) || press.modifiers.contains(.option) {
+                        prompt += "\n"
+                        return .handled
+                    }
+                    submit()
+                    return .handled
                 }
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(theme.secondaryColor)
-                .padding(.horizontal, 14)
-                .frame(height: 34)
-                .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(theme.elevatedColor))
+            HStack(spacing: 6) {
+                Menu {
+                    Button("New project…") { model.showNewProject = true }
+                    Button("Import ZIP…") { model.chooseZipToImport() }
+                    Button("Open folder…") { model.chooseFolderToOpen() }
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 14, weight: .regular))
+                        .foregroundStyle(theme.secondaryColor)
+                }
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
+                .fixedSize()
+                .frame(width: 32, height: 32)
+                .overlay(Circle().stroke(theme.borderColor, lineWidth: 1))
+                .help("Start from a template, a ZIP or a folder")
+                Spacer()
+                Button(action: submit) {
+                    Image(systemName: "arrow.up")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(empty ? theme.mutedColor : theme.bgColor)
+                        .frame(width: 32, height: 32)
+                        .background(RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            .fill(empty ? theme.surfaceColor : theme.accentColor))
+                }
+                .buttonStyle(.plain)
+                .help("Create a project from this description (↩)")
             }
-            .buttonStyle(.plain)
         }
-        .padding(.leading, 18)
-        .padding(.trailing, 7)
-        .frame(height: 50)
-        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(theme.surfaceColor))
+        .padding(.horizontal, 20)
+        .padding(.top, 18)
+        .padding(.bottom, 12)
+        .background(RoundedRectangle(cornerRadius: Metrics.composerRadius, style: .continuous).fill(theme.elevatedColor))
         .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(dropTargeted ? theme.accentColor : theme.borderColor.opacity(0.6), lineWidth: dropTargeted ? 1.5 : 1)
+            RoundedRectangle(cornerRadius: Metrics.composerRadius, style: .continuous)
+                .stroke(dropTargeted ? theme.accentColor : (inputFocused ? theme.accentColor.opacity(0.45) : theme.borderColor),
+                        lineWidth: dropTargeted ? 1.5 : 1)
         )
+        .softShadow()
         .onDrop(of: [.fileURL], isTargeted: $dropTargeted) { providers in model.handleDrop(providers) }
     }
 
@@ -93,7 +126,7 @@ struct HomeView: View {
         if projects.isEmpty {
             VStack(spacing: 6) {
                 Text("Start your first project")
-                    .font(.system(size: 15, weight: .medium))
+                    .font(.serif(18))
                     .foregroundStyle(theme.textColor)
                 Text("Create one from a template, import a ZIP from Overleaf, or open a folder.")
                     .font(.system(size: 13))
@@ -102,11 +135,12 @@ struct HomeView: View {
             .frame(maxWidth: .infinity)
             .padding(.top, 24)
         } else {
-            Text("Recent")
+            Text("Recents")
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(theme.mutedColor)
                 .padding(.bottom, 8)
-                .padding(.leading, 4)
+                .padding(.leading, 10)
+                .frame(maxWidth: .infinity, alignment: .leading)
             VStack(spacing: 2) {
                 ForEach(projects) { p in ProjectRow(project: p) }
             }
@@ -125,8 +159,8 @@ struct ProjectRow: View {
                 Image(systemName: "doc.richtext")
                     .font(.system(size: 16))
                     .foregroundStyle(theme.accentColor)
-                    .frame(width: 30, height: 30)
-                    .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(theme.surfaceColor))
+                    .frame(width: 34, height: 34)
+                    .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(theme.surfaceColor))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(project.name).font(.system(size: 13.5, weight: .medium)).foregroundStyle(theme.textColor)
                     Text(subtitle).font(.system(size: 12)).foregroundStyle(theme.mutedColor).lineLimit(1)
@@ -137,9 +171,9 @@ struct ProjectRow: View {
                     .foregroundStyle(theme.mutedColor)
             }
             .padding(.horizontal, 10)
-            .frame(height: 52)
+            .frame(height: 56)
             .contentShape(Rectangle())
-            .hoverHighlight(radius: 10)
+            .hoverHighlight(radius: 12)
         }
         .buttonStyle(.plain)
         .draggable(project.id.uuidString)
@@ -180,7 +214,7 @@ struct ProjectsListView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text("Projects").font(.system(size: 26, weight: .bold)).foregroundStyle(theme.textColor)
+                Text("Projects").font(.serif(30)).foregroundStyle(theme.textColor)
                 Spacer()
                 PillButton(title: "New project", systemImage: "plus") { model.showNewProject = true }
             }
@@ -190,8 +224,9 @@ struct ProjectsListView: View {
                 PlainField(placeholder: "Search projects", text: $query)
             }
             .padding(.horizontal, 12)
-            .frame(height: 36)
-            .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(theme.surfaceColor))
+            .frame(height: 40)
+            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(theme.surfaceColor))
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(theme.borderColor, lineWidth: 1))
             .padding(.bottom, 16)
             ScrollView {
                 VStack(spacing: 2) {
@@ -202,7 +237,7 @@ struct ProjectsListView: View {
         }
         .frame(maxWidth: 820)
         .padding(.horizontal, 48)
-        .padding(.top, 40)
+        .padding(.top, 56)
         .frame(maxWidth: .infinity, alignment: .top)
     }
 

@@ -15,7 +15,7 @@ struct NewProjectSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("New project")
-                .font(.system(size: 20, weight: .bold))
+                .font(.serif(26))
                 .foregroundStyle(theme.textColor)
                 .padding(.bottom, 18)
 

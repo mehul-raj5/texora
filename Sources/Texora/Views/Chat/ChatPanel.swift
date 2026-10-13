@@ -9,7 +9,6 @@ struct ChatPanel: View {
     var body: some View {
         VStack(spacing: 0) {
             ChatHeader()
-            ThemedDivider()
             ChatMessages()
             ChatInput()
         }
@@ -40,11 +39,9 @@ struct ChatPanel: View {
 
 private struct ChatHeader: View {
     @Environment(WorkspaceModel.self) private var ws
-    @Environment(AppSettings.self) private var settings
     @Environment(\.theme) private var theme
 
     var body: some View {
-        @Bindable var settings = settings
         HStack(spacing: 4) {
             Menu {
                 Button("New chat") { ws.chat.newChat() }
@@ -65,7 +62,7 @@ private struct ChatHeader: View {
             } label: {
                 HStack(spacing: 5) {
                     Text(ws.chat.activeChat?.title ?? "New chat")
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.system(size: 13.5, weight: .medium))
                         .foregroundStyle(theme.textColor)
                         .lineLimit(1)
                     Image(systemName: "chevron.down").font(.system(size: 9, weight: .semibold)).foregroundStyle(theme.mutedColor)
@@ -75,28 +72,12 @@ private struct ChatHeader: View {
             .menuIndicator(.hidden)
             .frame(maxWidth: .infinity, alignment: .leading)
             .layoutPriority(-1)
-            Menu {
-                Picker("Model", selection: $settings.claudeModel) {
-                    ForEach(ClaudeModel.allCases) { m in Text(m.label).tag(m) }
-                }
-                .pickerStyle(.inline)
-            } label: {
-                HStack(spacing: 4) {
-                    Text(settings.claudeModel.label).font(.system(size: 12))
-                    Image(systemName: "chevron.down").font(.system(size: 8, weight: .semibold))
-                }
-                .foregroundStyle(theme.secondaryColor)
-            }
-            .menuStyle(.borderlessButton)
-            .menuIndicator(.hidden)
-            .fixedSize()
-            .help("Claude model")
             IconButton(systemName: "square.and.pencil", help: "New chat", size: 13) { ws.chat.newChat() }
             IconButton(systemName: "sidebar.right", help: "Hide chat (⌘L)", size: 13) { ws.chatVisible = false }
         }
         .padding(.leading, 14)
         .padding(.trailing, 8)
-        .frame(height: 40)
+        .frame(height: 44)
     }
 }
 
@@ -107,7 +88,7 @@ private struct ChatMessages: View {
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 16) {
+                LazyVStack(alignment: .leading, spacing: 22) {
                     if ws.chat.messages.isEmpty {
                         ChatEmptyState()
                     }
@@ -116,8 +97,8 @@ private struct ChatMessages: View {
                     }
                     Color.clear.frame(height: 1).id("bottom")
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
             }
             .scrollIndicators(.automatic)
             .onChange(of: ws.chat.messages.last?.text) { proxy.scrollTo("bottom", anchor: .bottom) }
@@ -143,25 +124,26 @@ private struct ChatEmptyState: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("✦").font(.system(size: 24)).foregroundStyle(theme.accentColor)
+            Image(systemName: "sparkle").font(.system(size: 26, weight: .semibold)).foregroundStyle(theme.accentColor)
             Text("Ask Claude about your project")
-                .font(.system(size: 16, weight: .semibold))
+                .font(.serif(24))
                 .foregroundStyle(theme.textColor)
             Text("Claude can read and edit every file here, compile to check its work, and use data or files you drop in. Highlight text in the code or PDF to ask about a specific passage.")
-                .font(.system(size: 12.5))
+                .font(.system(size: 13))
                 .foregroundStyle(theme.secondaryColor)
+                .lineSpacing(2)
                 .fixedSize(horizontal: false, vertical: true)
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 8) {
                 ForEach(suggestions, id: \.self) { s in
                     Button { ws.chat.send(text: s == "Fix the compile errors" ? ws.fixErrorsPrompt() : s) } label: {
                         HStack {
-                            Text(s).font(.system(size: 12.5)).foregroundStyle(theme.textColor)
+                            Text(s).font(.system(size: 13)).foregroundStyle(theme.textColor)
                             Spacer()
                             Image(systemName: "arrow.up.right").font(.system(size: 10)).foregroundStyle(theme.mutedColor)
                         }
-                        .padding(.horizontal, 12)
-                        .frame(height: 34)
-                        .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(theme.surfaceColor))
+                        .padding(.horizontal, 14)
+                        .frame(height: 38)
+                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(theme.borderColor, lineWidth: 1))
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -169,17 +151,19 @@ private struct ChatEmptyState: View {
             }
             .padding(.top, 4)
         }
-        .padding(.top, 20)
+        .padding(.top, 28)
     }
 }
 
 private struct ChatInput: View {
     @Environment(WorkspaceModel.self) private var ws
+    @Environment(AppSettings.self) private var settings
     @Environment(\.theme) private var theme
     @FocusState private var focused: Bool
 
     var body: some View {
         @Bindable var chat = ws.chat
+        @Bindable var settings = settings
         VStack(alignment: .leading, spacing: 8) {
             if ws.chat.isRunning {
                 HStack(spacing: 8) {
@@ -211,7 +195,7 @@ private struct ChatInput: View {
                 TextField("", text: $chat.draft,
                           prompt: Text("Message Claude…").foregroundStyle(theme.mutedColor), axis: .vertical)
                     .textFieldStyle(.plain)
-                    .font(.system(size: 13.5))
+                    .font(.system(size: 14))
                     .foregroundStyle(theme.textColor)
                     .lineLimit(1...10)
                     .focused($focused)
@@ -237,13 +221,29 @@ private struct ChatInput: View {
                         .help("Include the text selected in the editor (⇧⌘L)")
                     }
                     Spacer()
+                    Menu {
+                        Picker("Model", selection: $settings.claudeModel) {
+                            ForEach(ClaudeModel.allCases) { m in Text(m.label).tag(m) }
+                        }
+                        .pickerStyle(.inline)
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text(settings.claudeModel.label).font(.system(size: 12.5))
+                            Image(systemName: "chevron.down").font(.system(size: 8, weight: .semibold))
+                        }
+                        .foregroundStyle(theme.secondaryColor)
+                    }
+                    .menuStyle(.borderlessButton)
+                    .menuIndicator(.hidden)
+                    .fixedSize()
+                    .help("Claude model")
                     if ws.chat.isRunning {
                         Button { ws.chat.stop() } label: {
                             Image(systemName: "stop.fill")
                                 .font(.system(size: 10, weight: .bold))
                                 .foregroundStyle(theme.bgColor)
-                                .frame(width: 28, height: 28)
-                                .background(Circle().fill(theme.textColor))
+                                .frame(width: 30, height: 30)
+                                .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(theme.textColor))
                         }
                         .buttonStyle(.plain)
                         .help("Stop")
@@ -253,8 +253,8 @@ private struct ChatInput: View {
                             Image(systemName: "arrow.up")
                                 .font(.system(size: 12, weight: .bold))
                                 .foregroundStyle(empty ? theme.mutedColor : theme.bgColor)
-                                .frame(width: 28, height: 28)
-                                .background(Circle().fill(empty ? theme.elevatedColor : theme.accentColor))
+                                .frame(width: 30, height: 30)
+                                .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(empty ? theme.surfaceColor : theme.accentColor))
                         }
                         .buttonStyle(.plain)
                         .disabled(empty)
@@ -262,14 +262,15 @@ private struct ChatInput: View {
                     }
                 }
             }
-            .padding(.horizontal, 12)
-            .padding(.top, 10)
-            .padding(.bottom, 8)
-            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(theme.surfaceColor))
-            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(focused ? theme.accentColor.opacity(0.5) : theme.borderColor.opacity(0.6), lineWidth: 1))
+            .padding(.horizontal, 14)
+            .padding(.top, 12)
+            .padding(.bottom, 10)
+            .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(theme.elevatedColor))
+            .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).stroke(focused ? theme.accentColor.opacity(0.45) : theme.borderColor, lineWidth: 1))
+            .softShadow(radius: 14, y: 4)
         }
-        .padding(.horizontal, 12)
-        .padding(.bottom, 12)
+        .padding(.horizontal, 14)
+        .padding(.bottom, 14)
         .padding(.top, 4)
         .onReceive(NotificationCenter.default.publisher(for: .focusChatInput)) { _ in focused = true }
     }
@@ -324,9 +325,9 @@ struct Chip: View {
             }
         }
         .foregroundStyle(theme.secondaryColor)
-        .padding(.horizontal, 8)
-        .frame(height: 22)
-        .background(Capsule().fill(theme.elevatedColor))
+        .padding(.horizontal, 9)
+        .frame(height: 24)
+        .background(Capsule().fill(theme.surfaceColor))
     }
 }
 

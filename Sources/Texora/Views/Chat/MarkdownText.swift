@@ -4,7 +4,7 @@ import SwiftUI
 struct MarkdownText: View {
     @Environment(\.theme) private var theme
     let text: String
-    var fontSize: CGFloat = 13.5
+    var fontSize: CGFloat = 14.5
 
     enum Block: Hashable {
         case paragraph(String)
@@ -17,7 +17,7 @@ struct MarkdownText: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 7) {
+        VStack(alignment: .leading, spacing: 10) {
             ForEach(Array(Self.parse(text).enumerated()), id: \.offset) { _, block in
                 view(for: block)
             }
@@ -29,28 +29,28 @@ struct MarkdownText: View {
     private func view(for block: Block) -> some View {
         switch block {
         case .paragraph(let s):
-            inline(s).font(.system(size: fontSize)).foregroundStyle(theme.textColor)
-                .lineSpacing(3).fixedSize(horizontal: false, vertical: true)
+            inline(s).font(.serif(fontSize)).foregroundStyle(theme.textColor)
+                .lineSpacing(4).fixedSize(horizontal: false, vertical: true)
         case .heading(let level, let s):
-            inline(s).font(.system(size: fontSize + (level == 1 ? 4 : level == 2 ? 2 : 1), weight: .semibold))
+            inline(s).font(.serif(fontSize + (level == 1 ? 4 : level == 2 ? 2 : 1), weight: .semibold))
                 .foregroundStyle(theme.textColor).padding(.top, 4)
         case .bullet(let s, let indent):
             HStack(alignment: .firstTextBaseline, spacing: 7) {
                 Text("•").foregroundStyle(theme.mutedColor)
                 inline(s).foregroundStyle(theme.textColor).fixedSize(horizontal: false, vertical: true)
             }
-            .font(.system(size: fontSize))
+            .font(.serif(fontSize))
             .padding(.leading, CGFloat(indent) * 14)
         case .numbered(let n, let s):
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Text(n).foregroundStyle(theme.mutedColor).monospacedDigit()
                 inline(s).foregroundStyle(theme.textColor).fixedSize(horizontal: false, vertical: true)
             }
-            .font(.system(size: fontSize))
+            .font(.serif(fontSize))
         case .quote(let s):
             HStack(spacing: 8) {
                 Rectangle().fill(theme.borderColor).frame(width: 3)
-                inline(s).font(.system(size: fontSize)).foregroundStyle(theme.secondaryColor)
+                inline(s).font(.serif(fontSize)).foregroundStyle(theme.secondaryColor)
             }
             .fixedSize(horizontal: false, vertical: true)
         case .code(let lang, let code):
@@ -148,6 +148,7 @@ struct CodeBlock: View {
                     .fixedSize(horizontal: true, vertical: true)
             }
         }
-        .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(theme.surfaceColor))
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(theme.surfaceColor))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(theme.borderColor.opacity(0.7), lineWidth: 1))
     }
 }

@@ -20,7 +20,7 @@ struct TopBar: View {
         }
         .padding(.leading, model.sidebarVisible ? 10 : 78)
         .padding(.trailing, 10)
-        .frame(height: 44)
+        .frame(height: 48)
         .background(theme.bgColor)
         .gesture(WindowDragGesture())
         .overlay(alignment: .bottom) {

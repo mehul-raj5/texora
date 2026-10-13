@@ -34,17 +34,17 @@ private struct UserMessage: View {
             }
             if !message.text.isEmpty {
                 Text(message.text)
-                    .font(.system(size: 13.5))
+                    .font(.system(size: 14))
                     .foregroundStyle(theme.textColor)
                     .textSelection(.enabled)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(RoundedRectangle(cornerRadius: 13, style: .continuous).fill(theme.surfaceColor))
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(theme.surfaceColor))
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
         .frame(maxWidth: .infinity, alignment: .trailing)
-        .padding(.leading, 36)
+        .padding(.leading, 32)
     }
 }
 
@@ -159,8 +159,8 @@ private struct AssistantMessage: View {
             }
         }
         .padding(10)
-        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(theme.surfaceColor.opacity(0.7)))
-        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(theme.borderColor.opacity(0.7), lineWidth: 1))
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(theme.surfaceColor.opacity(0.7)))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(theme.borderColor.opacity(0.7), lineWidth: 1))
         .opacity(message.undone ? 0.7 : 1)
     }
 }

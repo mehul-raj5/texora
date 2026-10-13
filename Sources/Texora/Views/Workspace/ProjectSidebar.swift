@@ -13,7 +13,7 @@ struct ProjectSidebar: View {
                 SidebarRow(icon: "chevron.left", title: "Home") { app.goHome() }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(ws.record.name)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.serif(19))
                         .foregroundStyle(theme.textColor)
                         .lineLimit(1)
                     Text(ws.mainFile.map { "Main file: \($0)" } ?? "No main file")

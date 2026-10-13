@@ -142,7 +142,7 @@ struct WorkspaceToolbar: View {
         @Bindable var ws = ws
         HStack(spacing: 8) {
             ThemedSegmented(options: [(WorkspaceModel.Layout.code, "Code"), (.split, "Split"), (.pdf, "PDF")], selection: $ws.layout)
-                .frame(width: 168)
+                .frame(width: 176)
                 .help("Layout (⌥⌘1, ⌥⌘2, ⌥⌘3)")
             RecompileButton()
             Menu {
@@ -158,9 +158,10 @@ struct WorkspaceToolbar: View {
             .menuStyle(.borderlessButton)
             .menuIndicator(.hidden)
             .fixedSize()
-            .padding(.horizontal, 10)
-            .frame(height: 28)
-            .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(theme.surfaceColor))
+            .padding(.horizontal, 12)
+            .frame(height: 30)
+            .background(RoundedRectangle(cornerRadius: Metrics.controlRadius, style: .continuous).fill(theme.surfaceColor))
+            .overlay(RoundedRectangle(cornerRadius: Metrics.controlRadius, style: .continuous).stroke(theme.borderColor, lineWidth: 1))
             .help("Export the project (⇧⌘E)")
             IconButton(systemName: "sparkles", help: "Chat with Claude (⌘L)", active: ws.chatVisible) { ws.chatVisible.toggle() }
         }
@@ -192,9 +193,9 @@ private struct RecompileButton: View {
                 }
             }
             .foregroundStyle(theme.bgColor)
-            .padding(.horizontal, 12)
-            .frame(height: 28)
-            .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(theme.accentColor.opacity(hovering ? 0.88 : 1)))
+            .padding(.horizontal, 13)
+            .frame(height: 30)
+            .background(RoundedRectangle(cornerRadius: Metrics.controlRadius, style: .continuous).fill(theme.accentColor.opacity(hovering ? 0.88 : 1)))
             .contentShape(Rectangle())
             .onHover { hovering = $0 }
         }

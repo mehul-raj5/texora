@@ -7,7 +7,7 @@ struct SidebarView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Room for the traffic lights; also lets you drag the window from here.
-            Color.clear.frame(height: 44).contentShape(Rectangle()).gesture(WindowDragGesture())
+            Color.clear.frame(height: 48).contentShape(Rectangle()).gesture(WindowDragGesture())
             if case .project = model.route, let ws = model.workspace {
                 ProjectSidebar().environment(ws)
             } else {
@@ -32,37 +32,34 @@ private struct SettingsRow: View {
 struct HomeSidebar: View {
     @Environment(AppModel.self) private var model
     @Environment(\.theme) private var theme
-    @State private var chatsExpanded = true
     @State private var newCollectionName: String?
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 1) {
+            VStack(alignment: .leading, spacing: 2) {
+                NewChatRow {
+                    model.goHome()
+                    NotificationCenter.default.post(name: .focusHomeInput, object: nil)
+                }
+                .padding(.bottom, 4)
                 SidebarRow(icon: "house", title: "Home", selected: model.route == .home) { model.goHome() }
                 SidebarRow(icon: "doc.text", title: "Projects", count: model.library.projects.count,
                            selected: model.route == .projects) { model.route = .projects }
 
-                SidebarSectionLabel(title: "Chats")
-                SidebarRow(icon: "square.and.pencil", title: "New chat") {
-                    model.goHome()
-                    NotificationCenter.default.post(name: .focusHomeInput, object: nil)
-                }
-                DisclosureRow(title: "Previous chats", expanded: $chatsExpanded)
-                if chatsExpanded {
-                    let chats = Array(model.library.recentChats.prefix(12))
-                    if chats.isEmpty {
-                        Text("Your chats will be listed here.")
-                            .font(.system(size: 12.5))
-                            .foregroundStyle(theme.mutedColor)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 4)
-                    } else {
-                        ForEach(chats) { chat in
-                            SidebarRow(icon: nil, title: chat.title, indent: 18) {
-                                model.openProject(chat.projectID, chat: chat.id)
-                            }
-                            .help(model.library.project(chat.projectID)?.name ?? "")
+                SidebarSectionLabel(title: "Recents")
+                let chats = Array(model.library.recentChats.prefix(12))
+                if chats.isEmpty {
+                    Text("Your chats will be listed here.")
+                        .font(.system(size: 12.5))
+                        .foregroundStyle(theme.mutedColor)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 4)
+                } else {
+                    ForEach(chats) { chat in
+                        SidebarRow(icon: nil, title: chat.title) {
+                            model.openProject(chat.projectID, chat: chat.id)
                         }
+                        .help(model.library.project(chat.projectID)?.name ?? "")
                     }
                 }
 
@@ -78,7 +75,7 @@ struct HomeSidebar: View {
                         .onExitCommand { newCollectionName = nil }
                     }
                     .padding(.horizontal, 10)
-                    .frame(height: 30)
+                    .frame(height: 33)
                 } else {
                     SidebarRow(icon: "plus", title: "New collection") { newCollectionName = "" }
                 }
@@ -89,6 +86,37 @@ struct HomeSidebar: View {
             .padding(.horizontal, 8)
         }
         .scrollIndicators(.never)
+    }
+}
+
+/// The primary sidebar action: an accent disc with a plus, like a "new chat" button.
+private struct NewChatRow: View {
+    @Environment(\.theme) private var theme
+    var action: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: "plus")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(theme.bgColor)
+                    .frame(width: 22, height: 22)
+                    .background(Circle().fill(theme.accentColor))
+                    .frame(width: 20)
+                Text("New chat")
+                    .font(.system(size: 13.5, weight: .medium))
+                    .foregroundStyle(theme.textColor)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 10)
+            .frame(height: 36)
+            .contentShape(Rectangle())
+            .background(RoundedRectangle(cornerRadius: Metrics.rowRadius, style: .continuous)
+                .fill(hovering ? theme.hoverColor : .clear))
+            .onHover { hovering = $0 }
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -158,7 +186,7 @@ private struct CollectionRows: View {
                 }
                 .foregroundStyle(theme.secondaryColor)
                 .padding(.horizontal, 10)
-                .frame(height: 30)
+                .frame(height: 33)
                 .contentShape(Rectangle())
                 .hoverHighlight()
             }
