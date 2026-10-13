@@ -94,7 +94,11 @@ PLIST
 echo "▸ Signing (ad-hoc)"
 # Extended attributes (Finder info, provenance) break strict signature checks.
 xattr -cr "$APP"
-codesign --force --deep --sign - "$APP" >/dev/null
+# Ad-hoc signatures are identified by their exact code hash, so macOS would treat every build as a new
+# app and ask for folder permissions again. A designated requirement on the bundle identifier keeps the
+# identity stable across builds, so permissions granted once stay granted.
+codesign --force --deep --sign - --identifier app.texora.Texora \
+  --requirements '=designated => identifier "app.texora.Texora"' "$APP" >/dev/null
 codesign --verify --deep --strict "$APP"
 
 if [[ $INSTALL == 1 ]]; then

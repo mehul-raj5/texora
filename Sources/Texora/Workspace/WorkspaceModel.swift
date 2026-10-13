@@ -704,7 +704,7 @@ final class WorkspaceModel {
         - The app saves the user's open files before each message and recompiles the PDF automatically after you finish. Build output lives in .build/; never edit files there.
         - Files the user attaches in chat are copied into chatattachments/ in the project.
         - Keep the document compiling: escape special characters, don't add packages unnecessarily, and match the existing bibliography style.
-        - Only touch files inside the project folder. Don't delete or rename files unless asked.
+        - Only touch files inside the project folder. Never search, list or read outside it (no `find ~`, `ls ~`, or paths in Desktop, Downloads, Documents or Pictures); macOS shows the user a privacy prompt for those. Don't delete or rename files unless asked.
         - If the user asks a question or wants feedback, answer concisely without editing files.
         """
     }

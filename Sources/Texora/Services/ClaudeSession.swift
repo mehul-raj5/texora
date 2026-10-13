@@ -57,6 +57,8 @@ final class ClaudeSession: @unchecked Sendable {
             if c.allowScripts { cmds += ["python3", "python", "Rscript", "gnuplot", "julia", "node", "pip3", "uv"] }
             for cmd in cmds { allowed.append("Bash(\(cmd):*)") }
             args += ["--allowedTools"] + allowed
+            // Broad scans of the home folder or disk trip macOS privacy prompts (Desktop, Downloads, Photos).
+            args += ["--disallowedTools"] + ["find ~", "find /", "find $HOME", "ls ~", "ls /Users", "mdfind", "du ~", "grep -r ~", "rg ~"].map { "Bash(\($0):*)" }
         }
         args += ["--tools", tools.joined(separator: ",")]
         if let m = c.model, !m.isEmpty { args += ["--model", m] }

@@ -67,27 +67,18 @@ final class ToolLocator: @unchecked Sendable {
         lock.lock(); cache.removeAll(); lock.unlock()
     }
 
+    /// Reads /etc/paths and /etc/paths.d (what login shells use) without running any shell scripts,
+    /// so launching Texora never touches protected folders.
     private func loadShellPath() {
-        let p = Process()
-        p.executableURL = URL(fileURLWithPath: "/bin/zsh")
-        p.arguments = ["-lc", "printf %s \"$PATH\""]
-        let out = Pipe()
-        p.standardOutput = out
-        p.standardError = FileHandle.nullDevice
-        p.standardInput = FileHandle.nullDevice
-        do {
-            try p.run()
-            DispatchQueue.global().async { [weak self] in
-                let data = out.fileHandleForReading.readDataToEndOfFile()
-                p.waitUntilExit()
-                let s = String(decoding: data, as: UTF8.self)
-                let dirs = s.split(separator: ":").map(String.init).filter { !$0.isEmpty }
-                self?.lock.lock()
-                self?.shellPath = dirs
-                self?.cache.removeAll()
-                self?.lock.unlock()
-            }
-        } catch {}
+        var dirs: [String] = []
+        let fm = FileManager.default
+        var files = ["/etc/paths"]
+        if let extra = try? fm.contentsOfDirectory(atPath: "/etc/paths.d") { files += extra.sorted().map { "/etc/paths.d/" + $0 } }
+        for f in files {
+            guard let text = try? String(contentsOfFile: f, encoding: .utf8) else { continue }
+            dirs += text.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }.filter { $0.hasPrefix("/") }
+        }
+        lock.lock(); shellPath = dirs; lock.unlock()
     }
 }
 
