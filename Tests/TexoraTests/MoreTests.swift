@@ -499,3 +499,40 @@ final class PDFRefreshTests: XCTestCase {
         XCTAssertEqual(c.pdfVersion, 2)
     }
 }
+
+/// Regression: a Finder `.DS_Store` made the file walker skip whole folders (figures missing from exports).
+final class ListFilesRegressionTests: XCTestCase {
+    func testDSStoreAtRootDoesNotHideSubfolders() {
+        let root = makeTempDir("ds-root")
+        defer { try? FileManager.default.removeItem(at: root) }
+        for f in [".DS_Store", "main.tex", "references.bib", "figures/a.pdf", "figures/b.pdf", "figures/sub/c.png"] { writeFile(f, "x", in: root) }
+        XCTAssertEqual(Set(ProjectImporter.listFiles(in: root)),
+                       ["main.tex", "references.bib", "figures/a.pdf", "figures/b.pdf", "figures/sub/c.png"])
+    }
+
+    func testDSStoreInsideSubfolderDoesNotHideSiblings() {
+        let root = makeTempDir("ds-sub")
+        defer { try? FileManager.default.removeItem(at: root) }
+        for f in ["main.tex", "figures/.DS_Store", "figures/._a.pdf", "figures/a.pdf", "figures/b.pdf", "zz/z.tex"] { writeFile(f, "x", in: root) }
+        XCTAssertEqual(Set(ProjectImporter.listFiles(in: root)), ["main.tex", "figures/a.pdf", "figures/b.pdf", "zz/z.tex"])
+    }
+}
+
+final class ExportRulesTests: XCTestCase {
+    func testKeepsDataFilesAndEmptyFoldersButDropsBuildByProducts() throws {
+        let root = makeTempDir("exp-rules")
+        defer { try? FileManager.default.removeItem(at: root) }
+        for f in [".DS_Store", "main.tex", "main.aux", "main.log", "main.synctex.gz", "results.log", "eval/run.out",
+                  "figures/a.pdf", "chatattachments/notes.csv", "sec/ch1.tex", "sec/ch1.aux"] { writeFile(f, "x", in: root) }
+        try FileManager.default.createDirectory(at: root.appendingPathComponent("empty/inner"), withIntermediateDirectories: true)
+        XCTAssertEqual(Set(ExportService.exportFiles(root: root, options: ExportOptions())),
+                       ["main.tex", "results.log", "eval/run.out", "figures/a.pdf", "sec/ch1.tex"])
+        let out = root.appendingPathComponent("out.zip")
+        try ExportService.exportZip(root: root, projectName: "P", mainFile: "main.tex", to: out, options: ExportOptions())
+        let list = ProcessRunner.runSync("/usr/bin/zipinfo", ["-1", out.path]).stdout
+        XCTAssertTrue(list.contains("P/empty/inner/"), "empty folders are kept")
+        XCTAssertTrue(list.contains("P/figures/a.pdf"))
+        XCTAssertFalse(list.contains("chatattachments"))
+        XCTAssertFalse(list.contains(".DS_Store"))
+    }
+}

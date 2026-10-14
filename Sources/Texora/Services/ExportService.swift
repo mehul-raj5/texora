@@ -12,15 +12,52 @@ enum ExportService {
         "xdv", "nav", "snm", "vrb", "idx", "ilg", "ind", "pdfsync", "run.xml",
     ]
 
-    /// Files that go into a project export (relative paths).
+    /// Files that go into a project export (relative paths): everything in the project (sources,
+    /// figures, data, any other files and folders) except build output, macOS junk and chat attachments.
+    /// Aux-type files are only treated as build by-products when they sit next to a .tex file with the
+    /// same name (main.aux beside main.tex), so data files like results.log are kept.
     static func exportFiles(root: URL, options: ExportOptions) -> [String] {
-        ProjectImporter.listFiles(in: root, limit: 50_000).filter { rel in
+        let all = ProjectImporter.listFiles(in: root, limit: 100_000)
+        let texBases = Set(all.filter { $0.lowercased().hasSuffix(".tex") }.map { ($0 as NSString).deletingPathExtension })
+        return all.filter { rel in
             let lower = rel.lowercased()
-            if lower.hasSuffix(".synctex.gz") || lower.hasSuffix(".run.xml") { return false }
-            if auxExtensions.contains((lower as NSString).pathExtension) { return false }
             if !options.includeChatAttachments && (rel.hasPrefix("chatattachments/") || rel == "chatattachments") { return false }
+            if (rel as NSString).lastPathComponent.hasPrefix("._") { return false }
+            var base = (rel as NSString).deletingPathExtension
+            var ext = (lower as NSString).pathExtension
+            if lower.hasSuffix(".synctex.gz") { base = (base as NSString).deletingPathExtension; ext = "synctex" }
+            if lower.hasSuffix(".run.xml") { base = (base as NSString).deletingPathExtension; ext = "run.xml" }
+            if auxExtensions.contains(ext) && texBases.contains(base) { return false }
             return true
         }
+    }
+
+    /// Folders to recreate in the export, so empty folders are kept too.
+    static func exportFolders(root: URL, options: ExportOptions) -> [String] {
+        let fm = FileManager.default
+        guard let en = fm.enumerator(at: root, includingPropertiesForKeys: [.isDirectoryKey]) else { return [] }
+        var out: [String] = []
+        let rootPath = root.standardizedFileURL.path
+        for case let url as URL in en {
+            guard (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true else { continue }
+            let name = url.lastPathComponent
+            if ProjectImporter.ignoredNames.contains(name) || name.hasPrefix(".") || (!options.includeChatAttachments && name == "chatattachments" && url.deletingLastPathComponent().standardizedFileURL.path == rootPath) {
+                en.skipDescendants(); continue
+            }
+            var rel = url.standardizedFileURL.path
+            if rel.hasPrefix(rootPath + "/") { rel.removeFirst(rootPath.count + 1) }
+            out.append(rel)
+        }
+        return out
+    }
+
+    /// True if any .tex file points into chatattachments/ (then excluding it would break the export).
+    static func texReferencesChatAttachments(root: URL) -> Bool {
+        for rel in ProjectImporter.listFiles(in: root, extensions: ["tex"]) {
+            if let text = try? String(contentsOf: root.appendingPathComponent(rel), encoding: .utf8),
+               text.contains("chatattachments/") { return true }
+        }
+        return false
     }
 
     /// Writes a ZIP of the whole project. The archive contains one folder named after the project.
@@ -32,6 +69,9 @@ enum ExportService {
         try fm.createDirectory(at: top, withIntermediateDirectories: true)
         defer { try? fm.removeItem(at: staging) }
 
+        for folder in exportFolders(root: root, options: options) {
+            try fm.createDirectory(at: top.appendingPathComponent(folder), withIntermediateDirectories: true)
+        }
         for rel in exportFiles(root: root, options: options) {
             let src = root.appendingPathComponent(rel)
             let dst = top.appendingPathComponent(rel)

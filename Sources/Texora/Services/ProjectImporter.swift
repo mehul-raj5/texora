@@ -178,10 +178,13 @@ enum ProjectImporter {
         let rootPath = root.standardizedFileURL.path
         for case let url as URL in en {
             let name = url.lastPathComponent
-            if ignoredNames.contains(name) || (name.hasPrefix(".") && name != ".latexmkrc") {
-                en.skipDescendants(); continue
-            }
             let isDir = (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) ?? false
+            if ignoredNames.contains(name) || (name.hasPrefix(".") && name != ".latexmkrc") {
+                // Only skip *into* ignored folders. Calling skipDescendants() after a file (e.g. a
+                // root .DS_Store) skips the last folder visited, which dropped whole folders like figures/.
+                if isDir { en.skipDescendants() }
+                continue
+            }
             if isDir { continue }
             if let exts = extensions, !exts.contains(url.pathExtension.lowercased()) { continue }
             var rel = url.standardizedFileURL.path

@@ -370,7 +370,7 @@ struct ExportSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Export project").font(.system(size: 18, weight: .bold)).foregroundStyle(theme.textColor)
-            Text("Creates a ZIP of the whole project: every .tex, .bib, style, figure and data file. Build files are left out.")
+            Text("Creates a ZIP of the whole project: every .tex and .bib file, figures and other attachments, data, and any other files and folders. Build files and chat attachments are left out.")
                 .font(.system(size: 12.5)).foregroundStyle(theme.secondaryColor)
                 .fixedSize(horizontal: false, vertical: true)
             VStack(alignment: .leading, spacing: 10) {
@@ -381,6 +381,10 @@ struct ExportSheet: View {
             .toggleStyle(.checkbox)
             .font(.system(size: 13))
             .foregroundStyle(theme.textColor)
+            if !options.includeChatAttachments && ExportService.texReferencesChatAttachments(root: ws.root) {
+                Label("Your .tex files use files from chatattachments/. Include them, or the exported paper won't compile.", systemImage: "exclamationmark.triangle")
+                    .font(.system(size: 12)).foregroundStyle(theme.warningColor)
+            }
             let count = ExportService.exportFiles(root: ws.root, options: options).count
             Text("\(count) project file\(count == 1 ? "" : "s") will be included.")
                 .font(.system(size: 12)).foregroundStyle(theme.mutedColor)

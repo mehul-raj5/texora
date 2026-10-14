@@ -3,14 +3,18 @@
 Read this first when resuming. It's updated after every meaningful step. The plan is in [PLAN.md](PLAN.md).
 
 ## Status
-- **All milestones M0–M7 built and verified end to end (2026-10-12).** Texora.app is installed in /Applications.
-- **Next:**
-  - Wait for user feedback.
-  - Optional: install TinyTeX (needs the user's OK, since it downloads ~100 MB) for pdfLaTeX speed and full error lists.
+- **All milestones M0–M7 built and verified (2026-10-12), plus follow-up fixes through 2026-10-14.** Texora.app is installed in /Applications.
+- TinyTeX is installed (TeX Live 2026, pdfLaTeX via latexmk, the same engine as Overleaf). CI and release workflows are pushed and green.
+- Fixes since v1.0.0:
+  - ⌘S/⌘B/⌘L shortcuts, black panes after layout switch, resize handles
+  - Claude edits sync to the editor and PDF, package auto-install retries, log noise
+  - stable signing identity (no repeated permission prompts)
+  - export: a root .DS_Store made `listFiles` skip whole folders (figures/). Fixed; regression tests added.
+- **Open idea from the user:** a cloud-synced, multi-user version (Google sign-in, owner/editor/viewer roles, cloud object storage, local rendering). It was asked for as ideas only.
 
 ## Environment facts (verified 2026-10-12)
 - arm64, macOS 27, Xcode 27, Swift 6.4, Node 25, npm 11
-- `claude` 2.1.296 at `~/.local/bin/claude`. Tectonic 0.15 at `/opt/homebrew/bin`. No TeX Live / TinyTeX yet.
+- `claude` 2.1.296 at `~/.local/bin/claude`. Tectonic 0.15 at `/opt/homebrew/bin`. TinyTeX at `~/Library/TinyTeX` (installed 2026-10-13).
 - No `timeout` command on macOS. Use background process + kill.
 - `~` is itself a git repo, so this project has its own `.git`. Don't commit unless the user asks.
 
@@ -85,7 +89,7 @@ scripts/tx.sh snapshot /path/shot.png
 - Pushing: SSH isn't authorised, so push over HTTPS with the gh token:
   `git -c credential.helper= -c 'credential.helper=!gh auth git-credential' push`
 - Release **v1.0.0** is published with Texora-1.0.0.dmg + .sha256. Download, checksum, signature and `xattr -cr` were verified.
-- `.github/workflows/ci.yml` and `release.yml` exist locally but are **not pushed yet**. The gh token lacks the `workflow` scope; the user must run `gh auth refresh -h github.com -s workflow`.
+- `.github/workflows/ci.yml` and `release.yml` are pushed (the gh token now has the `workflow` scope). The first CI run passed on macos-26.
 - DMG: `scripts/make-dmg.sh` uses dmgbuild (venv `.venv-dmg`) and the background from `scripts/dmg/make-background.swift`.
 - Tests: 47 Swift tests (`swift test`) + 11 Node tests (`cd web && npm test`).
 
